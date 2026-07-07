@@ -55,9 +55,8 @@ function ContratoModal({ onClose, onSuccess }) {
     try {
       const { data } = await contratosApi.create(form);
       onSuccess(data);
-      // TODO: Bug #1 - Modal doesn't close after successful submit
       // Fix: uncomment the line below
-      // onClose();
+       onClose();
     } catch (err) {
       console.error('Error creating contrato:', err);
       setErrors({ submit: err.response?.data?.error || 'Error al crear el contrato' });

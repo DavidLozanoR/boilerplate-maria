@@ -41,10 +41,8 @@ function getContrato(req, res) {
     return res.status(404).json({ error: 'Contrato no encontrado', status: 404 });
   }
 
-  // BUG: Unnecessary extra query duplicating data (n+1 problem)
-  const extraData = db.prepare('SELECT * FROM contratos WHERE id = ?').get(id);
 
-  res.json({ ...contrato, _duplicate: extraData });
+  res.json(contrato); //Fix: return contrato directly without running an extra query
 }
 
 function createContrato(req, res) {

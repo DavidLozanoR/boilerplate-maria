@@ -67,8 +67,10 @@ function Contratos() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {/* TODO: Bug #2 - missing overflow-x-auto wrapper for mobile responsiveness */}
-        <table className="w-full text-sm">
+        {/* Fix: Added overflow-x-auto wrapper*/}
+       <div className="overflow-x-auto">
+        {/* Fix: Added min-w-max to ensure minimum width and enable scrolling */}
+        <table className="w-full min-w-max text-sm">
           <thead className="bg-gray-50">
             <tr>
               {['Nombre', 'Apellidos', 'Teléfono', 'Email', 'Fecha Reserva', 'Contrato', 'Status', 'Acciones'].map((h) => (
@@ -136,6 +138,7 @@ function Contratos() {
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {showModal && (

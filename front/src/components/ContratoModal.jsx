@@ -41,10 +41,8 @@ function ContratoModal({ onClose, onSuccess }) {
   async function handleSubmit(e) {
     e.preventDefault();
     const newErrors = validate();
-
-    // TODO: Bug #3 - Even when errors exist, the form tries to submit anyway
-    // because the condition below is inverted
-    if (Object.keys(newErrors).length === 0) {
+    //Fix: check if there are validation errors and set them in state, preventing submission
+    if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
     }
@@ -55,8 +53,8 @@ function ContratoModal({ onClose, onSuccess }) {
     try {
       const { data } = await contratosApi.create(form);
       onSuccess(data);
-      // Fix: uncomment the line below
-       onClose();
+      //Fix: call onClose after successful submission to close the modal
+      onClose();
     } catch (err) {
       console.error('Error creating contrato:', err);
       setErrors({ submit: err.response?.data?.error || 'Error al crear el contrato' });

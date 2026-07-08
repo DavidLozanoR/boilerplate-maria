@@ -9,9 +9,6 @@ const initialForm = {
   fecha_reserva: '',
 };
 
-// TODO: Bug #3 - Inline validation doesn't work correctly
-// The errors state is declared but validation runs only on submit, not on field change
-// Fix: add onChange validation per field or use a proper validation library
 function ContratoModal({ onClose, onSuccess }) {
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
@@ -19,29 +16,65 @@ function ContratoModal({ onClose, onSuccess }) {
 
   function handleChange(e) {
     const { name, value } = e.target;
+
+    // Real-time validation: Phone number only accepts digits
+    if (name === 'telefono' && value && !/^\d+$/.test(value)) {
+      return; // Ignore change if value is not a number
+    }
+
     setForm((prev) => ({ ...prev, [name]: value }));
-    // TODO: Bug #3 - validation should clear/set error here on each keystroke
-    // Currently errors only reset on submit, giving misleading UX
+
+    // FIX (Bug #3): Clear specific field error as soon as the user starts typing (Improves UX)
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
   }
 
   function validate() {
     const newErrors = {};
+
+    // Required fields validation
     if (!form.nombre.trim()) newErrors.nombre = 'El nombre es obligatorio';
     if (!form.apellidos.trim()) newErrors.apellidos = 'Los apellidos son obligatorios';
-    if (!form.telefono.trim()) newErrors.telefono = 'El teléfono es obligatorio';
+
+    // Phone validation (required and format)
+    if (!form.telefono.trim()) {
+      newErrors.telefono = 'El teléfono es obligatorio';
+    } else if (!/^\d+$/.test(form.telefono)) {
+      newErrors.telefono = 'El teléfono solo debe contener números';
+    }
+
+    // Email validation
     if (!form.email.trim()) {
       newErrors.email = 'El email es obligatorio';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
       newErrors.email = 'El email no es válido';
     }
-    if (!form.fecha_reserva) newErrors.fecha_reserva = 'La fecha de reserva es obligatoria';
+
+    // Reservation date validation
+    if (!form.fecha_reserva) {
+      newErrors.fecha_reserva = 'La fecha de reserva es obligatoria';
+    } else {
+      // Get today's date in YYYY-MM-DD format to compare with the input
+      const today = new Date();
+      const yyyy = today.getFullYear();
+      const mm = String(today.getMonth() + 1).padStart(2, '0');
+      const dd = String(today.getDate()).padStart(2, '0');
+      const todayString = `${yyyy}-${mm}-${dd}`;
+
+      if (form.fecha_reserva < todayString) {
+        newErrors.fecha_reserva = 'La fecha de reserva no puede ser anterior a hoy';
+      }
+    }
+
     return newErrors;
   }
 
   async function handleSubmit(e) {
     e.preventDefault();
     const newErrors = validate();
-    //Fix: check if there are validation errors and set them in state, preventing submission
+    
+    // Check if there are validation errors, set them in state and prevent submission
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
       return;
@@ -53,7 +86,7 @@ function ContratoModal({ onClose, onSuccess }) {
     try {
       const { data } = await contratosApi.create(form);
       onSuccess(data);
-      //Fix: call onClose after successful submission to close the modal
+      // Close modal after successful submission
       onClose();
     } catch (err) {
       console.error('Error creating contrato:', err);
@@ -88,6 +121,8 @@ function ContratoModal({ onClose, onSuccess }) {
                 name={field.name}
                 value={form[field.name]}
                 onChange={handleChange}
+                // Native HTML 'min' attribute to block past dates in the visual calendar
+                min={field.type === 'date' ? new Date().toISOString().split('T')[0] : undefined}
                 className={`w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors[field.name] ? 'border-red-400' : 'border-gray-300'
                 }`}

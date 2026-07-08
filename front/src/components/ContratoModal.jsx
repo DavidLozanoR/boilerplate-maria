@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { contratosApi } from '../utils/api.js';
 
 const initialForm = {
@@ -9,10 +9,24 @@ const initialForm = {
   fecha_reserva: '',
 };
 
-function ContratoModal({ onClose, onSuccess }) {
-  const [form, setForm] = useState(initialForm);
+const editableFields = ['nombre', 'apellidos', 'telefono', 'email', 'fecha_reserva'];
+
+function buildFormFromContrato(contrato) {
+  if (!contrato) return { ...initialForm };
+
+  return editableFields.reduce((acc, field) => ({ ...acc, [field]: contrato[field] ?? '' }), { ...initialForm });
+}
+
+// Add contract edit modal with validation and error handling
+function ContratoModal({ onClose, onSuccess, contratoToEdit }) {
+  const [form, setForm] = useState(() => buildFormFromContrato(contratoToEdit));
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    setForm(buildFormFromContrato(contratoToEdit));
+    setErrors({});
+  }, [contratoToEdit]);
 
   function handleChange(e) {
     const { name, value } = e.target;
@@ -24,7 +38,7 @@ function ContratoModal({ onClose, onSuccess }) {
 
     setForm((prev) => ({ ...prev, [name]: value }));
 
-    // FIX (Bug #3): Clear specific field error as soon as the user starts typing (Improves UX)
+    // FIX: Clear specific field error as soon as the user starts typing 
     if (errors[name]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
     }
@@ -83,14 +97,19 @@ function ContratoModal({ onClose, onSuccess }) {
     setErrors({});
     setLoading(true);
 
+    // Add logic to handle both create and edit contract flows
     try {
-      const { data } = await contratosApi.create(form);
-      onSuccess(data);
-      // Close modal after successful submission
-      onClose();
+      if (contratoToEdit) {
+        // Edit flow
+        await contratosApi.update(contratoToEdit.id, form);
+      } else {
+        // Create flow
+        await contratosApi.create(form);
+      }
+      onSuccess(); // Refresh the contratos list in the parent component
     } catch (err) {
-      console.error('Error creating contrato:', err);
-      setErrors({ submit: err.response?.data?.error || 'Error al crear el contrato' });
+      console.error('Error saving contrato:', err);
+      setErrors({ submit: err.response?.data?.error || 'Error al procesar el contrato' });
     } finally {
       setLoading(false);
     }
@@ -108,7 +127,7 @@ function ContratoModal({ onClose, onSuccess }) {
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-bold text-gray-800">Nuevo Contrato</h3>
+          <h3 className="text-lg font-bold text-gray-800">{contratoToEdit ? 'Editar Contrato' : 'Nuevo Contrato'}</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl font-bold">×</button>
         </div>
 

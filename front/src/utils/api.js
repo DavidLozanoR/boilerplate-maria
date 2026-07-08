@@ -9,6 +9,9 @@ const api = axios.create({
 
 export const contratosApi = {
   getAll: (page = 1) => api.get(`/contratos?page=${page}`),
+  // Added status and name filters to the getAll method
+  getAll: (page = 1, nombre = '', status = '') => 
+    api.get(`/contratos?page=${page}&nombre=${nombre}&status=${status}`),
   getById: (id) => api.get(`/contratos/${id}`),
   create: (data) => api.post('/contratos', data),
   update: (id, data) => api.put(`/contratos/${id}`, data),
